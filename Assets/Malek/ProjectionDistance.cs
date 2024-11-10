@@ -11,7 +11,6 @@ public class ProjectionDistance : MonoBehaviour
     private Vector3 pointB = new Vector3 (2, -3, 8);
     private Vector3 pointC = new Vector3 (2, 3, 6);
 
-    // Update is called once per frame
     void Start()
     {
         Vector3 CA = vectorBA(pointC, pointA);

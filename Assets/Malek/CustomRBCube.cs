@@ -16,7 +16,7 @@ public class vertex {
 [RequireComponent(typeof(MeshFilter))]
 public class CustomRBCube : MonoBehaviour
 {
-    public int[,] Ibody = new int[,]
+    public float[,] Ibody = new float[,]
     {
         {0, 0, 0},
         {0, 0, 0},
@@ -65,9 +65,9 @@ public class CustomRBCube : MonoBehaviour
         float Iyy = (1f / 12f) * mass * (halfLengthX * halfLengthX + halfLengthZ * halfLengthZ);
         float Izz = (1f / 12f) * mass * (halfLengthX * halfLengthX + halfLengthY * halfLengthY);
 
-        Ibody[0, 0] = (int)Ixx;
-        Ibody[1, 1] = (int)Iyy;
-        Ibody[2, 2] = (int)Izz;
+        Ibody[0, 0] = Ixx;
+        Ibody[1, 1] = Iyy;
+        Ibody[2, 2] = Izz;
     }
 
     void Awake()
@@ -103,6 +103,18 @@ public class CustomRBCube : MonoBehaviour
         {
             verts.Add(new vertex(vertices[i], weights[i]));
         }
+    }
+
+    public Matrix4x4 CreateTranslationMatrix(Vector3 translation)
+    {
+        Matrix4x4 matrix = Matrix4x4.identity; // Commence par une matrice identit�
+
+        // Remplir les valeurs de translation
+        matrix.m03 = translation.x; // D�placement en x
+        matrix.m13 = translation.y; // D�placement en y
+        matrix.m23 = translation.z; // D�placement en z
+
+        return matrix; // Retourne la matrice de translation
     }
 
     public void ApplyTransformation(Matrix4x4 matrix)

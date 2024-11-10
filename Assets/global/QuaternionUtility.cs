@@ -19,19 +19,19 @@ public static class QuaternionUtility
             );
     }
 
-    public static Matrix4x4 CreateRotationMatrixFromQuaternion(Quaternion q)
+    public static float[,] CreateRotationMatrixFromQuaternion(Quaternion q)
     {
-        Matrix4x4 matrix = new Matrix4x4();
+        float[,] matrix = new float[2,2];
 
         // Calculer les �l�ments de la matrice de rotation
         float xx = q.x * q.x;        float xy = q.x * q.y;        float xz = q.x * q.z;
         float xw = q.x * q.w;        float yy = q.y * q.y;        float yz = q.y * q.z;
         float yw = q.y * q.w;        float zz = q.z * q.z;        float zw = q.z * q.w;
 
-        matrix.m00 = 1 - 2 * (yy + zz);         matrix.m01 = 2 * (xy - zw);            matrix.m02 = 2 * (xz + yw);          matrix.m03 = 0;
-        matrix.m10 = 2 * (xy + zw);             matrix.m11 = 1 - 2 * (xx + zz);        matrix.m12 = 2 * (yz - xw);          matrix.m13 = 0;
-        matrix.m20 = 2 * (xz - yw);             matrix.m21 = 2 * (yz + xw);            matrix.m22 = 1 - 2 * (xx + yy);      matrix.m23 = 0;
-        matrix.m30 = 0;                         matrix.m31 = 0;                        matrix.m32 = 0;                      matrix.m33 = 1;
+        matrix[0, 0] = 1 - 2 * (yy + zz);         matrix[0, 1] = 2 * (xy - zw);            matrix[0, 2] = 2 * (xz + yw);          
+        matrix[1, 0] = 2 * (xy + zw);             matrix[1, 1] = 1 - 2 * (xx + zz);        matrix[1, 2] = 2 * (yz - xw);          
+        matrix[2, 0] = 2 * (xz - yw);             matrix[2, 1] = 2 * (yz + xw);            matrix[2, 2] = 1 - 2 * (xx + yy);      
+       
         return matrix;
     }
 

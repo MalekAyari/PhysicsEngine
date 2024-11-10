@@ -135,8 +135,6 @@ GameObject:
   - component: {fileID: 618479857}
   - component: {fileID: 618479856}
   - component: {fileID: 618479859}
-  - component: {fileID: 618479860}
-  - component: {fileID: 618479861}
   m_Layer: 0
   m_Name: GameObject
   m_TagString: Untagged
@@ -173,13 +171,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   verts: []
   vertices:
-  - {x: -2, y: -1, z: -1}
+  - {x: -1, y: -1, z: -1}
   - {x: 1, y: -1, z: -1}
   - {x: 1, y: 1, z: -1}
   - {x: -1, y: 1, z: -1}
-  - {x: -1, y: -2, z: 1}
-  - {x: 1, y: -1, z: 2}
-  - {x: 2, y: 1, z: 1}
+  - {x: -1, y: -1, z: 1}
+  - {x: 1, y: -1, z: 1}
+  - {x: 1, y: 1, z: 1}
   - {x: -1, y: 1, z: 1}
   weights: 0100000001000000010000000100000001000000010000000100000001000000
   mesh: {fileID: 0}
@@ -245,44 +243,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f2317c3672d34d74cb0f51407587ed31, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  mass: 1
+  mass: 0
   position: {x: 0, y: 0, z: 0}
-  CenterOfMass: {x: 0, y: 0, z: 0}
-  gravity: 0
-  Dt: 0.2
+  LocalCenterOfMass: {x: 0, y: 0, z: 0}
+  GlobalCenterOfMass: {x: 0, y: 0, z: 0}
+  gravity: 9.81
+  friction: 1
+  Dt: 0.02
   velocity: {x: 0, y: 0, z: 0}
   angularVelocity: {x: 0, y: 0, z: 0}
---- !u!114 &618479860
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 618479851}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 706af123040e8d34ea7260a0872ae141, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  velocity: {x: 0, y: 0, z: 0}
-  gravity: 9.81
-  dt: 0.002
-  position: {x: 0, y: 2, z: 0}
-  mass: 0.5
-  frictionCoefficient: 1
---- !u!114 &618479861
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 618479851}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1553a85c93c5a1a4c82836e246e73a0d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  forceMagnitude: 10
 --- !u!1 &705507993
 GameObject:
   m_ObjectHideFlags: 0
