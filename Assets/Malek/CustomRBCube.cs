@@ -1,11 +1,11 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 [System.Serializable]
 public class vertex {
-    public Vector3 position;
+    public Vector3 position = Vector3.zero;
     public float weight;
-
     public vertex(Vector3 pos, float weight){
         this.position = pos;
         this.weight = weight;
@@ -23,6 +23,12 @@ public class CustomRBCube : MonoBehaviour
         {0, 0, 0}
     };
 
+    public float[,] Ibodyinv;
+
+    public Vector3 position = Vector3.zero;
+
+    public Vector3 localCenterOfMass = Vector3.zero;
+    public Vector3 worldCenterOfMass = Vector3.zero;
     public List<vertex> verts = new List<vertex>();
     public Vector3[] vertices = new Vector3[]
     {
@@ -72,7 +78,6 @@ public class CustomRBCube : MonoBehaviour
 
     void Awake()
     {
-
         MeshFilter meshFilter = GetComponent<MeshFilter>();
         MeshRenderer meshRenderer = GetComponent<MeshRenderer>();
         
@@ -92,11 +97,13 @@ public class CustomRBCube : MonoBehaviour
         };
 
         CalculateInertiaTensor();
+        Ibodyinv = MatrixUtility.Inverse(Ibody);
 
         mesh = new Mesh();
         mesh.vertices = vertices;
         mesh.triangles = triangles;
         mesh.RecalculateNormals();
+        mesh.RecalculateBounds();
 
         meshFilter.mesh = mesh;
         for (int i = 0; i < vertices.Length; i++)
@@ -105,16 +112,29 @@ public class CustomRBCube : MonoBehaviour
         }
     }
 
+    void Update()
+    {
+        localCenterOfMass = CalculateCenterOfMass();
+        worldCenterOfMass = localCenterOfMass + position;
+
+        verts.Clear();
+        for (int i = 0; i < vertices.Length; i++)
+        {
+            verts.Add(new vertex(vertices[i], weights[i]));
+        }
+        
+        mesh.RecalculateNormals();
+        mesh.RecalculateBounds();
+    }
     public Matrix4x4 CreateTranslationMatrix(Vector3 translation)
     {
-        Matrix4x4 matrix = Matrix4x4.identity; // Commence par une matrice identit�
+        Matrix4x4 matrix = Matrix4x4.identity; 
 
-        // Remplir les valeurs de translation
-        matrix.m03 = translation.x; // D�placement en x
-        matrix.m13 = translation.y; // D�placement en y
-        matrix.m23 = translation.z; // D�placement en z
+        matrix.m03 = translation.x;
+        matrix.m13 = translation.y;
+        matrix.m23 = translation.z; 
 
-        return matrix; // Retourne la matrice de translation
+        return matrix; 
     }
 
     public void ApplyTransformation(Matrix4x4 matrix)
@@ -128,15 +148,21 @@ public class CustomRBCube : MonoBehaviour
         mesh.RecalculateBounds();
     }
     
-    void Update()
+    
+
+    Vector3 CalculateCenterOfMass()
     {
-        verts.Clear();
-        for (int i = 0; i < vertices.Length; i++)
+        Vector3 centerOfMass = Vector3.zero;
+        float totalMass = 0;
+
+        foreach (vertex v in verts)
         {
-            verts.Add(new vertex(vertices[i], weights[i]));
+            centerOfMass += v.position * v.weight;
+            totalMass += v.weight;
         }
-        
-        mesh.RecalculateNormals();
-        mesh.RecalculateBounds();
+
+        centerOfMass /= totalMass;
+
+        return centerOfMass;
     }
 }

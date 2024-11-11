@@ -1,88 +1,90 @@
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.SocialPlatforms;
 
 [RequireComponent(typeof(CustomRBCube))]
 public class CustomRB : MonoBehaviour
 {
     [Header("Properties")]
     public float mass = 0;
-    public Vector3 position;
-
-    [Header("Center Of Mass")]
-    public Vector3 LocalCenterOfMass;
-    public Vector3 GlobalCenterOfMass;
 
     [Header("Physics properties")]
     public float gravity = 9.81f;
     public float friction = 0;
     public float Dt = 0.2f;
 
+
     [Header("Velocities")]
+    public Vector3 acceleration;
     public Vector3 velocity;
     public Vector3 angularVelocity;
 
+    [Header("Information")]
+    public Vector3 inertiaTensor;
+    public Vector3 inertiaTensorRotation;
+
     //Object system
-    CustomRBCube cube;
+    public CustomRBCube cube;
+    
+    MovementMatrix State;
 
     
+    
+    void Start()
+    {
+        cube = GetComponent<CustomRBCube>();
 
+        velocity = Vector3.zero;
+        
+        //Angular velocity = W
+        angularVelocity = Vector3.zero;
 
-    //Maths==================================================================
-    //Rotational state of the system
-    float[,] rotationMatrix = new float[,]
+        float[,] rotationMatrix = new float[,]
         {
             {1, 0, 0},
             {0, 1, 0},
             {0, 0, 1}
         };
-    
-    //Point vectors
-    Vector3[] pointVectorsFromCenterOfMass;
-    
-    //For points
-    InertiaMatrix localInertiaMatrix;
 
-    //For system
-    InertiaMatrix globalInertiaMatrix;
-    //=======================================================================
-    
-    void Start()
-    {
-        cube = GetComponent<CustomRBCube>();
-        GlobalCenterOfMass = LocalCenterOfMass;
-        velocity = Vector3.zero;
-        position = Vector3.zero;
+        //Basic data
 
-        localInertiaMatrix = new InertiaMatrix(LocalCenterOfMass, rotationMatrix, Vector3.zero, Vector3.zero, Dt, cube);
-        globalInertiaMatrix = new InertiaMatrix(GlobalCenterOfMass, rotationMatrix, Vector3.zero, Vector3.zero, Dt, cube);
+        //Initialises X(t) = (x(t), R(t), P(t), L(t))
+        State = new MovementMatrix(cube.worldCenterOfMass, rotationMatrix, Vector3.zero, Vector3.zero, Dt, this);
 
         //Initiate mass as sum of point weights
         foreach (vertex v in cube.verts){
             mass += v.weight;
         }
+
     }
 
     void FixedUpdate()
     {
-        LocalCenterOfMass = CalculateCenterOfMass(cube);
-        
-        float[,] inertiaTensor = CalculateInertiaTensor(rotationMatrix, cube.Ibody);
+        float[,] inertiaTensor = CalculateInertiaTensor(State.rotationMatrix, cube.Ibody);
 
         Vector3 appliedForce = Vector3.zero;
         Vector3 appliedForcePoint = Vector3.zero;
+
         //Apply force here
+        //===================
 
-        rotationMatrix = CalculateRotationMatrix(inertiaTensor, appliedForcePoint, appliedForce);
+        //Update values
+        Vector3 torque = Vector3.Cross(appliedForcePoint - cube.localCenterOfMass, appliedForce);
 
+        foreach (vertex p in cube.verts){
+            Vector3 localPos = p.position-cube.localCenterOfMass;
+            p.position = MatrixUtility.MatrixDotVector(State.rotationMatrix, localPos) + cube.worldCenterOfMass;
 
-
-        pointVectorsFromCenterOfMass = CalculateVectors(cube.vertices, LocalCenterOfMass);
+            //new_ri(t) = angularVelocity x (ri(t) - localCenterOfMass) + velocity
+        }
+        
+        State.updateMatrix(velocity, angularVelocity, velocity, torque);
     }
 
     float[,] CalculateRotationMatrix(float[,] inertiaTensor, Vector3 appliedForce, Vector3 appliedForcePoint)
     {
-        Vector3 moment = Vector3.Cross(appliedForcePoint - LocalCenterOfMass, appliedForce);
+        Vector3 moment = Vector3.Cross(appliedForcePoint - cube.localCenterOfMass, appliedForce);
 
         Vector3 angularVelocity = MatrixUtility.MatrixDotVector(inertiaTensor, moment);
 
@@ -93,15 +95,6 @@ public class CustomRB : MonoBehaviour
 
         return QuaternionUtility.CreateRotationMatrixFromQuaternion(rotationQuaternion);
     }
-    // void UpdateRotationMatrix(float[,] inertiaTensor, Vector3 appliedForce, Vector3 appliedForcePoint){
-    //     Vector3 moment = Vector3.Cross(VectorUtility.vectorBA(LocalCenterOfMass, appliedForcePoint), appliedForce);
-    //     Vector3 rotationAxis = moment.normalized;
-
-    //     Vector3 angularAcceleration = CalculateAngularVelocity(inertiaTensor, moment);
-    //     angularVelocity += angularAcceleration * Dt;
-
-    //     rotationMatrix = MatrixUtility.UpdateRotationMatrix(rotationMatrix, angularVelocity, Dt);
-    // }
 
     Vector3 CalculateCenterOfMass(CustomRBCube cube)
     {
@@ -121,39 +114,39 @@ public class CustomRB : MonoBehaviour
         return centerOfMass;
     }
 
-    //Calcule le vecteur système comme la somme des vecteurs de ses points
-    Vector3 CalculerPSys(Vector3[] vectors)
-    {
-        Vector3 Psys = Vector3.zero;
-
-        for (int i = 0; i < vectors.Length; i++){
-            Psys += cube.verts[i].weight * vectors[i];
-        }
-
-        return Psys; 
-    }
-
-    //Calcule les vecteurs entre tout point et centre de masse pour maintenir
-    //une distance égale d'une image à la suivante 
-    Vector3[] CalculateVectors(Vector3[] points, Vector3 com)
-    {
-        Vector3[] pointVectorsFromCenterOfMass = new Vector3[points.Count()];
-
-        for (int i = 0; i < points.Count(); i++){
-            pointVectorsFromCenterOfMass[i] = VectorUtility.vectorBA(com, points[i]);
-        }
-
-        return pointVectorsFromCenterOfMass;
-    }
-
-    //Calculates I-1 = R(t).Ibody-1.R(t)T
+    //Calculates I = R(t).Ibody.R(t)T
     float[,] CalculateInertiaTensor(float[,] rotationMatrix, float[,] Ibody){
-        return MatrixUtility.MatrixDotMatrix(MatrixUtility.MatrixDotMatrix(rotationMatrix, MatrixUtility.Inverse(Ibody)), MatrixUtility.Transpose(rotationMatrix));
+        return MatrixUtility.MatrixDotMatrix(MatrixUtility.MatrixDotMatrix(rotationMatrix, Ibody), MatrixUtility.Transpose(rotationMatrix));
+    }
+    
+    //Calculates W = I-1.L(t)
+    public Vector3 CalculateAngularVelocity(
+        float[,] inertiaTensor, 
+        Vector3 appliedForce, 
+        Vector3 appliedForcePosition, 
+        Vector3 pointPosition, 
+        Vector3 angularVelocity, 
+        float deltaTime
+    )
+    {
+        //Torque
+        Vector3 r = pointPosition - appliedForcePosition;
+        Vector3 torque = Vector3.Cross(r, appliedForce);
+
+        //Angular acceleration
+        Vector3 angularAcceleration = CalculateAngularAcceleration(inertiaTensor, torque);
+
+        //Update the angular velocity
+        Vector3 newAngularVelocity = angularVelocity + angularAcceleration * deltaTime;
+
+        return newAngularVelocity;
     }
 
-    //Calculates W = I-1.L(t)
-    Vector3 CalculateAngularVelocity(float[,] InertiaTensor, Vector3 angularMomentum){
-        return MatrixUtility.MatrixDotVector(InertiaTensor, angularMomentum);
+    public Vector3 CalculateAngularAcceleration(float[,] State, Vector3 torque)
+    {
+        Vector3 angularAcceleration = MatrixUtility.MatrixDotVector(cube.Ibodyinv, torque);
+
+        return angularAcceleration;
     }
 
 }

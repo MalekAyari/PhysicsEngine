@@ -215,32 +215,12 @@ public static class MatrixUtility
         return result;
     }
 
-    // public static float[,] UpdateRotationMatrix(float[,] rotationMatrix, Vector3 angularVelocity, float dt)
-    // {
-    //     float angle = angularVelocity.magnitude * dt;
-        
-    //     if (angle == 0) 
-    //         return rotationMatrix;
-        
-    //     Vector3 rotationAxis = angularVelocity.normalized;
-        
-    //     float cosAngle = Mathf.Cos(angle);
-    //     float sinAngle = Mathf.Sin(angle);
-    //     float oneMinusCos = 1 - cosAngle;
+    public static Vector3 Vector3FromMatrix(float[,] matrix) 
+    {
+        if (matrix.GetLength(0) != 3 || matrix.GetLength(1) != 3) {
+            Debug.Log("Matrix must be 3x3");
+        }
 
-    //     float x = rotationAxis.x;
-    //     float y = rotationAxis.y;
-    //     float z = rotationAxis.z;
-
-    //     float[,] rotationUpdateMatrix = new float[3, 3]
-    //     {
-    //         { cosAngle + oneMinusCos * x * x, oneMinusCos * x * y - sinAngle * z, oneMinusCos * x * z + sinAngle * y },
-    //         { oneMinusCos * y * x + sinAngle * z, cosAngle + oneMinusCos * y * y, oneMinusCos * y * z - sinAngle * x },
-    //         { oneMinusCos * z * x - sinAngle * y, oneMinusCos * z * y + sinAngle * x, cosAngle + oneMinusCos * z * z }
-    //     };
-
-    //     return MatrixDotMatrix(rotationMatrix, rotationUpdateMatrix);
-    // }
-
-
+        return new Vector3(matrix[0, 0], matrix[0, 1], matrix[0, 2]);
+    }
 }
