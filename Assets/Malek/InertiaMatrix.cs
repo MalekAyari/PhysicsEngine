@@ -59,6 +59,9 @@ public class MovementMatrix
         updateRotationMatrix(w, torque);
         updateLinearMomentum(F);
         updateAngularMomentum(torque);
+        CalculateVelocity();
+        CalculateOmega();
+        CalculateIinv();
     }
 
     public void CalculateOmega(){
