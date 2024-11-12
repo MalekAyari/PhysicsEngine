@@ -88,4 +88,72 @@ public static class RK4Utility
 
         return (newR, newW);
     }
+
+    //Helper funcs
+    static Vector3 ComputeAcceleration(Vector3 pos, Vector3 vel, CustomRB rB)
+    {
+        // Calcul de l'acc�l�ration due � la gravit� et au frottement
+        Vector3 gravityForce = rB.mass * new Vector3(0, rB.gravity, 0);
+        Vector3 frictionForce = -rB.friction * vel;
+        return (gravityForce + frictionForce) / rB.mass;
+    }
+
+    private static Vector3 ComputeAngularAcceleration(Vector3 angularMomentum, CustomRB rb)
+    {
+        Vector3 torque = rb.cube.worldCenterOfMass; 
+
+        Vector3 Iinv = rb.state.Iinv;
+
+        // Calculate angular acceleration: alpha = I^(-1) * torque
+        Vector3 angularAcceleration = new Vector3(
+            Iinv.x * torque.x,
+            Iinv.y * torque.y,
+            Iinv.z * torque.z
+        );
+
+        return angularAcceleration;
+    }
+
+
+    public static void RK4Rigidbody(InertiaMatrix state, CustomRB rb, float timeStep, out Vector3 newPosition, out Vector3 newVelocity, out float[,] newRotationMatrix, out Vector3 newOmega)
+    {
+        
+        Vector3 k1_v = rb.acceleration * timeStep;
+        Vector3 k1_x = state.velocity * timeStep;
+
+        Vector3 k2_v = ComputeAcceleration(state.position + k1_x * 0.5f, state.velocity + k1_v *0.5f, rb) * timeStep;
+        Vector3 k2_x = (state.velocity + k1_v * 0.5f) * timeStep;
+    
+        Vector3 k3_v = ComputeAcceleration(state.position + k2_x * 0.5f, state.velocity + k2_v * 0.5f, rb) * timeStep;
+        Vector3 k3_x = (state.velocity + k2_v * 0.5f) * timeStep;
+
+        Vector3 k4_v = ComputeAcceleration(state.position + k3_x, state.velocity + k3_v, rb) * timeStep;
+        Vector3 k4_x = (state.velocity + k3_v) * timeStep;
+
+        newVelocity = state.velocity + (k1_v + 2 * k2_v + 2 * k3_v + k4_v) / 6;
+        newPosition = state.position + (k1_x + 2 * k2_x + 2 * k3_x + k4_x) / 6;
+
+
+        // Angular motion RK4 steps for rotation matrix
+        float[,] rotationMatrix = state.rotationMatrix;
+        Vector3 omega = state.omega;
+
+        float[,] skewOmega1 = MatrixUtility.Star(omega);
+        float[,] k1_r = MatrixUtility.MatrixDotMatrix(skewOmega1, rotationMatrix);
+
+        Vector3 omega2 = omega + ComputeAngularAcceleration(state.angularMomentum + (state.angularMomentum * 0.5f), rb) * (timeStep * 0.5f);
+        float[,] skewOmega2 = MatrixUtility.Star(omega2);
+        float[,] k2_r = MatrixUtility.MatrixDotMatrix(skewOmega2, MatrixUtility.MatrixPlusMatrix(rotationMatrix, MatrixUtility.MatrixDotScalar(k1_r, 0.5f * timeStep)));
+
+        Vector3 omega3 = omega + ComputeAngularAcceleration(state.angularMomentum + (state.angularMomentum * 0.5f), rb) * (timeStep * 0.5f);
+        float[,] skewOmega3 = MatrixUtility.Star(omega3);
+        float[,] k3_r = MatrixUtility.MatrixDotMatrix(skewOmega3, MatrixUtility.MatrixPlusMatrix(rotationMatrix, MatrixUtility.MatrixDotScalar(k2_r, 0.5f * timeStep)));
+
+        Vector3 omega4 = omega + ComputeAngularAcceleration(state.angularMomentum + state.angularMomentum, rb) * timeStep;
+        float[,] skewOmega4 = MatrixUtility.Star(omega4);
+        float[,] k4_r = MatrixUtility.MatrixDotMatrix(skewOmega4, MatrixUtility.MatrixPlusMatrix(rotationMatrix, MatrixUtility.MatrixDotScalar(k3_r, timeStep)));
+
+        newRotationMatrix = MatrixUtility.MatrixPlusMatrix(rotationMatrix, MatrixUtility.MatrixDotScalar(MatrixUtility.MatrixPlusMatrix(MatrixUtility.MatrixPlusMatrix(k1_r, MatrixUtility.MatrixDotScalar(k2_r, 2)), MatrixUtility.MatrixPlusMatrix(MatrixUtility.MatrixDotScalar(k3_r, 2), k4_r)), timeStep / 6));
+        newOmega = omega;
+    }
 }

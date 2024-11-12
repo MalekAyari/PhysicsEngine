@@ -146,6 +146,31 @@ public static class MatrixUtility
         return result;
     }
 
+    public static float[,] MatrixPlusVector(float[,] matrix, Vector3 vector)
+    {
+        int rows = matrix.GetLength(0);
+        int columns = matrix.GetLength(1);
+
+        // Ensure the vector size matches the matrix dimensions
+        if (rows != 3)
+        {
+            throw new System.ArgumentException("Matrix row size must match the vector length (3).");
+        }
+
+        float[,] result = new float[rows, columns];
+
+        for (int i = 0; i < rows; i++)
+        {
+            for (int j = 0; j < columns; j++)
+            {
+                // Add the corresponding component of the vector to each row
+                result[i, j] = matrix[i, j] + (i == 0 ? vector.x : i == 1 ? vector.y : vector.z);
+            }
+        }
+
+        return result;
+    }
+
     public static float[,] MatrixMinusMatrix(float[,] A, float[,] B)
     {
         int rows = A.GetLength(0);
@@ -215,6 +240,15 @@ public static class MatrixUtility
         return result;
     }
 
+    public static Vector3 VectorDotMatrix(Vector3 point, float[,] matrix)
+    {
+        Vector3 result;
+        result.x = matrix[0,0] * point.x + matrix[0,1] * point.y + matrix[0,2] * point.z + matrix[0,3];
+        result.y = matrix[1,0] * point.x + matrix[1,1] * point.y + matrix[1,2] * point.z + matrix[1,3];
+        result.z = matrix[2,0] * point.x + matrix[2,1] * point.y + matrix[2,2] * point.z + matrix[2,3];
+        return result;
+    }
+
     public static Vector3 Vector3FromMatrix(float[,] matrix) 
     {
         if (matrix.GetLength(0) != 3 || matrix.GetLength(1) != 3) {
@@ -222,5 +256,14 @@ public static class MatrixUtility
         }
 
         return new Vector3(matrix[0, 0], matrix[0, 1], matrix[0, 2]);
+    }
+
+    public static float[,] Star(Vector3 w){
+        return new float[,]
+            {
+                {0,     -w.z,   w.y },
+                {w.z,   0,      -w.x},
+                {-w.y,  w.x,    0   },
+            };
     }
 }

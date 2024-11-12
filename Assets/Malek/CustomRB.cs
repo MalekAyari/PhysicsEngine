@@ -1,7 +1,9 @@
 using System.Collections.Generic;
 using System.Linq;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.SocialPlatforms;
+using UnityEngine.UIElements;
 
 [RequireComponent(typeof(CustomRBCube))]
 public class CustomRB : MonoBehaviour
@@ -23,13 +25,10 @@ public class CustomRB : MonoBehaviour
     [Header("Information")]
     public Vector3 inertiaTensor;
     public Vector3 inertiaTensorRotation;
-
-    //Object system
     public CustomRBCube cube;
-    
-    MovementMatrix State;
+    public InertiaMatrix state;
 
-    
+    public float tn;
     //Moment t=0
     void Start()
     {
@@ -47,29 +46,55 @@ public class CustomRB : MonoBehaviour
             {0, 0, 1}
         };
 
-        //Initialises X(t) = (x(t), R(t), P(t), L(t))
-        State = new MovementMatrix(cube.worldCenterOfMass, rotationMatrix, Vector3.zero, Vector3.zero, Dt, this);
-
-        //Initiate mass as sum of point weights
-        foreach (vertex v in cube.verts){
-            mass += v.weight;
+        //Initialises mass as sum of point weights
+        for (int i=0; i<cube.verts.Count; i++)
+        {
+            mass += cube.verts[i].weight;
         }
+
+        //Initialises X(t) = (x(t), R(t), P(t), L(t))
+        state = new InertiaMatrix(cube.worldCenterOfMass, rotationMatrix, Vector3.zero, Vector3.zero, Dt, this);
     }
 
     //Moment t=t+1
     void FixedUpdate()
     {
-        Vector3 appliedForce = Vector3.zero;
-        Vector3 appliedForcePoint = Vector3.zero;
+        tn += Time.fixedDeltaTime;
 
-        //Apply force here
-        
-        //===================
+        // Compute force and torque
+        Vector3 appliedForce = Vector3.down * gravity * mass;
 
-        //Update values
-        Vector3 torque = Vector3.Cross(appliedForcePoint - cube.localCenterOfMass, appliedForce);
+        Vector3 appliedForcePoint = cube.worldCenterOfMass;
 
-        State.updateMatrix(linearVelocity, angularVelocity, appliedForce, torque);
+        Vector3 torque = Vector3.Cross(appliedForcePoint - cube.worldCenterOfMass, appliedForce);
+
+        // Apply RK4 integration to update the state
+        RK4Utility.RK4Rigidbody(state, this, Dt, out state.position, out state.velocity, out state.rotationMatrix, out state.omega);
+
+        // Update derived properties based on the new state
+        state.CalculateVelocity();
+        state.CalculateIinv();
+        state.CalculateOmega();
+
+        // Update center of mass and angular velocity if needed
+        cube.worldCenterOfMass = state.position;
+        angularVelocity = state.omega;
+
+
+        for (int i = 0; i < cube.verts.Count; i++)
+        {
+            vertex v = cube.verts[i];
+            Vector3 point = cube.mesh.vertices[i];
+        }
+
+        foreach (vertex v in cube.verts)
+        {
+            // Convert each vertex's local position to world position
+            Vector3 rotatedPosition = MatrixUtility.VectorDotMatrix(v.localPosition, state.rotationMatrix);
+            v.position = rotatedPosition + cube.worldCenterOfMass;
+        }
     }
+
+    
 
 }

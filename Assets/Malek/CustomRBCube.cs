@@ -5,10 +5,18 @@ using UnityEngine.UIElements;
 [System.Serializable]
 public class vertex {
     public Vector3 position = Vector3.zero;
+    public Vector3 localPosition;
+    public Vector3 worldCenterOfMass;
     public float weight;
-    public vertex(Vector3 pos, float weight){
+
+    public vertex(Vector3 pos, float weight, Vector3 worldCenterOfMass){
         this.position = pos;
         this.weight = weight;
+        this.worldCenterOfMass = worldCenterOfMass;
+    }
+
+    public void CalculateLocalPosition(){
+        localPosition = position - worldCenterOfMass;
     }
 }
 
@@ -55,27 +63,6 @@ public class CustomRBCube : MonoBehaviour
     };
     public Mesh mesh;
 
-    void CalculateInertiaTensor()
-    {
-        float mass = 0f;
-        foreach (vertex v in verts)
-        {
-            mass += v.weight;
-        }
-
-        float halfLengthX = Mathf.Abs(vertices[1].x - vertices[0].x) / 2f;
-        float halfLengthY = Mathf.Abs(vertices[3].y - vertices[0].y) / 2f;
-        float halfLengthZ = Mathf.Abs(vertices[4].z - vertices[0].z) / 2f;
-
-        float Ixx = (1f / 12f) * mass * (halfLengthY * halfLengthY + halfLengthZ * halfLengthZ);
-        float Iyy = (1f / 12f) * mass * (halfLengthX * halfLengthX + halfLengthZ * halfLengthZ);
-        float Izz = (1f / 12f) * mass * (halfLengthX * halfLengthX + halfLengthY * halfLengthY);
-
-        Ibody[0, 0] = Ixx;
-        Ibody[1, 1] = Iyy;
-        Ibody[2, 2] = Izz;
-    }
-
     void Awake()
     {
         MeshFilter meshFilter = GetComponent<MeshFilter>();
@@ -108,7 +95,9 @@ public class CustomRBCube : MonoBehaviour
         meshFilter.mesh = mesh;
         for (int i = 0; i < vertices.Length; i++)
         {
-            verts.Add(new vertex(vertices[i], weights[i]));
+            vertex newVert = new vertex(vertices[i], weights[i], worldCenterOfMass);
+            newVert.CalculateLocalPosition();
+            verts.Add(newVert);
         }
     }
 
@@ -120,7 +109,9 @@ public class CustomRBCube : MonoBehaviour
         verts.Clear();
         for (int i = 0; i < vertices.Length; i++)
         {
-            verts.Add(new vertex(vertices[i], weights[i]));
+            vertex newVert = new vertex(vertices[i], weights[i], worldCenterOfMass);
+            newVert.CalculateLocalPosition();
+            verts.Add(newVert);
         }
         
         mesh.RecalculateNormals();
@@ -148,7 +139,26 @@ public class CustomRBCube : MonoBehaviour
         mesh.RecalculateBounds();
     }
     
-    
+    void CalculateInertiaTensor()
+    {
+        float mass = 0f;
+        foreach (vertex v in verts)
+        {
+            mass += v.weight;
+        }
+
+        float halfLengthX = Mathf.Abs(vertices[1].x - vertices[0].x) / 2f;
+        float halfLengthY = Mathf.Abs(vertices[3].y - vertices[0].y) / 2f;
+        float halfLengthZ = Mathf.Abs(vertices[4].z - vertices[0].z) / 2f;
+
+        float Ixx = (1f / 12f) * mass * (halfLengthY * halfLengthY + halfLengthZ * halfLengthZ);
+        float Iyy = (1f / 12f) * mass * (halfLengthX * halfLengthX + halfLengthZ * halfLengthZ);
+        float Izz = (1f / 12f) * mass * (halfLengthX * halfLengthX + halfLengthY * halfLengthY);
+
+        Ibody[0, 0] = Ixx;
+        Ibody[1, 1] = Iyy;
+        Ibody[2, 2] = Izz;
+    }
 
     Vector3 CalculateCenterOfMass()
     {
@@ -165,4 +175,5 @@ public class CustomRBCube : MonoBehaviour
 
         return centerOfMass;
     }
+    
 }
