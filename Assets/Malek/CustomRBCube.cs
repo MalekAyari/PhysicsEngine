@@ -30,11 +30,9 @@ public class CustomRBCube : MonoBehaviour
         {0, 0, 0},
         {0, 0, 0}
     };
-
     public float[,] Ibodyinv;
-
     public Vector3 position = Vector3.zero;
-
+    public Vector3 rotation = Vector3.zero;
     public Vector3 localCenterOfMass = Vector3.zero;
     public Vector3 worldCenterOfMass = Vector3.zero;
     public List<vertex> verts = new List<vertex>();
@@ -49,7 +47,6 @@ public class CustomRBCube : MonoBehaviour
         new Vector3( 1,  1,  1), // front-top-right
         new Vector3(-1,  1,  1)  // front-top-left
     };
-
     public int[] weights = new int[]
     {
         1,
@@ -83,7 +80,6 @@ public class CustomRBCube : MonoBehaviour
             3, 7, 6, 3, 6, 2
         };
 
-        CalculateInertiaTensor();
         Ibodyinv = MatrixUtility.Inverse(Ibody);
 
         mesh = new Mesh();
@@ -99,11 +95,13 @@ public class CustomRBCube : MonoBehaviour
             newVert.CalculateLocalPosition();
             verts.Add(newVert);
         }
+        CalculateIbody();
+
     }
 
     void Update()
     {
-        localCenterOfMass = CalculateCenterOfMass();
+        localCenterOfMass = CalculateLocalCenterOfMass();
         worldCenterOfMass = localCenterOfMass + position;
 
         verts.Clear();
@@ -114,9 +112,14 @@ public class CustomRBCube : MonoBehaviour
             verts.Add(newVert);
         }
         
+        mesh.vertices = vertices;
+
         mesh.RecalculateNormals();
         mesh.RecalculateBounds();
     }
+
+    
+
     public Matrix4x4 CreateTranslationMatrix(Vector3 translation)
     {
         Matrix4x4 matrix = Matrix4x4.identity; 
@@ -139,7 +142,7 @@ public class CustomRBCube : MonoBehaviour
         mesh.RecalculateBounds();
     }
     
-    void CalculateInertiaTensor()
+    void CalculateIbody()
     {
         float mass = 0f;
         foreach (vertex v in verts)
@@ -160,7 +163,7 @@ public class CustomRBCube : MonoBehaviour
         Ibody[2, 2] = Izz;
     }
 
-    Vector3 CalculateCenterOfMass()
+    Vector3 CalculateLocalCenterOfMass()
     {
         Vector3 centerOfMass = Vector3.zero;
         float totalMass = 0;
@@ -175,5 +178,6 @@ public class CustomRBCube : MonoBehaviour
 
         return centerOfMass;
     }
+    
     
 }

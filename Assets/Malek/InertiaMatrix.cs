@@ -2,15 +2,16 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class InertiaMatrix
+public class State
 { 
     public Vector3 position;            // x(t)
     public float[,] rotationMatrix;     // R(t)
     public Vector3 linearMomentum;      // P(t)
     public Vector3 angularMomentum;     // L(t)
 
-    public Vector3 Iinv;                // I-1
+    public float[,] InertiaMatrix;      // I(t)
     public Vector3 velocity;            // v(t)
+    public Vector3 acceleration;        // a(t)
     public Vector3 omega;               // w(t)
 
     //Rigidbody
@@ -19,7 +20,7 @@ public class InertiaMatrix
     //Timestep
     public float dt;
 
-    public InertiaMatrix(Vector3 x0, float[,] R0, Vector3 P0, Vector3 L0, float Timestep, CustomRB rigidBody)
+    public State(Vector3 x0, float[,] R0, Vector3 P0, Vector3 L0, float Timestep, CustomRB rigidBody)
     {
         position = x0;
         rotationMatrix = R0;
@@ -31,17 +32,14 @@ public class InertiaMatrix
 
     void CalculatePosition(Vector3 vt){
         position += vt * dt;
-        position = MatrixUtility.VectorDotMatrix(position, rotationMatrix);
     }
 
-    void CalculateRotationMatrix(Vector3 w, Vector3 torque){
+    void CalculateRotationMatrix(Vector3 w){
         float[,] wMat = MatrixUtility.Star(w);
 
-        rotationMatrix = MatrixUtility.MatrixDotMatrix(wMat, rotationMatrix);
-
-        var (newR, newW) = RK4Utility.RK4RotationMotion(rotationMatrix, w, MatrixUtility.Inverse(rb.cube.Ibody), torque, dt);
+        // rotationMatrix = MatrixUtility.MatrixPlusMatrix(rotationMatrix, MatrixUtility.MatrixDotScalar(MatrixUtility.MatrixDotMatrix(wMat, rotationMatrix), dt));
+        MatrixUtility.MatrixDotMatrix(wMat, rotationMatrix);
     }
-
     
     void CalculateLinearMomentum(Vector3 F){
         linearMomentum += F * dt;
@@ -51,31 +49,49 @@ public class InertiaMatrix
         angularMomentum += torque * dt;
     }
 
-    public void CalculateMatrix(Vector3 vt, Vector3 w, Vector3 F, Vector3 torque){
+    public void CalculateMatrix(Vector3 force, Vector3 torque){
         //State
-        CalculatePosition(vt);
-        CalculateRotationMatrix(w, torque);
-        CalculateLinearMomentum(F);
+        CalculatePosition(velocity);
+        CalculateRotationMatrix(omega);
+        CalculateLinearMomentum(force);
         CalculateAngularMomentum(torque);
 
         //Derivatives
+        CalculateInertiaMatrix();
         CalculateVelocity();
-        CalculateIinv();
         CalculateOmega();
+        CalculateAcceleration();
     }
 
     //ω(t) = I−1(t).L(t)
-    public void CalculateOmega(){
-        omega = Vector3.Cross(Iinv, angularMomentum);
+    public void CalculateOmega()
+    {
+        // Check if the inertia matrix is invertible
+        float determinant = MatrixUtility.Determinant(InertiaMatrix);
+        if (Mathf.Abs(determinant) < Mathf.Epsilon)
+        {
+            Debug.LogError("Inertia matrix is singular or nearly singular. Cannot invert.");
+            return;
+        }
+
+        // Proceed with inversion
+        omega = MatrixUtility.MatrixDotVector(MatrixUtility.Inverse(InertiaMatrix), angularMomentum);
     }
 
-    // I−1(t) = R(t).I−1.bodyR(t)T
-    public void CalculateIinv(){
-        Iinv = MatrixUtility.Vector3FromMatrix(MatrixUtility.MatrixDotMatrix(rotationMatrix, MatrixUtility.MatrixDotMatrix(rb.cube.Ibodyinv, MatrixUtility.Transpose(rotationMatrix))));
+    // I(t) = R(t).Ibody.R(t)T
+    public void CalculateInertiaMatrix(){
+        if (rb.mass <= 0) Debug.LogError("mass is zero");
+        InertiaMatrix = MatrixUtility.MatrixDotMatrix(MatrixUtility.MatrixDotMatrix(rotationMatrix, rb.cube.Ibody) , MatrixUtility.Transpose(rotationMatrix)) ;
     }
 
-    //v(t) = P(t) / M
+    // p += v * dt
+    // v += acc * dt
+    // acc = v / dt
+    // v(t) = P(t) / M
     public void CalculateVelocity(){
         velocity = linearMomentum / rb.mass;
+    }
+    public void CalculateAcceleration(){
+        acceleration = velocity / dt;
     }
 }

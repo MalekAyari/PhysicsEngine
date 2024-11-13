@@ -84,10 +84,16 @@ public static class RK4Utility
                 1/6.0f
             )
         );
+
+        // Orthogonalize the result to keep it a valid rotation matrix
+        newR = MatrixUtility.Orthogonalize(newR);
+
+        // Compute new angular velocity
         Vector3 newW = w + (k1_w + 2 * k2_w + 2 * k3_w + k4_w) / 6.0f;
 
         return (newR, newW);
     }
+
 
     //Helper funcs
     static Vector3 ComputeAcceleration(Vector3 pos, Vector3 vel, CustomRB rB)
@@ -102,20 +108,15 @@ public static class RK4Utility
     {
         Vector3 torque = rb.cube.worldCenterOfMass; 
 
-        Vector3 Iinv = rb.state.Iinv;
+        float[,] Iinv = rb.state.InertiaMatrix;
 
-        // Calculate angular acceleration: alpha = I^(-1) * torque
-        Vector3 angularAcceleration = new Vector3(
-            Iinv.x * torque.x,
-            Iinv.y * torque.y,
-            Iinv.z * torque.z
-        );
+        // Calculate angular acceleration: L = I^(-1) * torque
+        Vector3 angularAcceleration = MatrixUtility.MatrixDotVector(Iinv, torque);
 
         return angularAcceleration;
     }
 
-
-    public static void RK4Rigidbody(InertiaMatrix state, CustomRB rb, float timeStep, out Vector3 newPosition, out Vector3 newVelocity, out float[,] newRotationMatrix, out Vector3 newOmega)
+    public static void RK4Rigidbody(State state, CustomRB rb, float timeStep, out Vector3 newPosition, out Vector3 newVelocity, out float[,] newRotationMatrix, out Vector3 newOmega)
     {
         
         Vector3 k1_v = rb.acceleration * timeStep;
