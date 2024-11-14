@@ -32,13 +32,22 @@ public class State
 
     void CalculatePosition(Vector3 vt){
         position += vt * dt;
+        position = MatrixUtility.VectorDotMatrix(position, rotationMatrix);
     }
 
     void CalculateRotationMatrix(Vector3 w){
         float[,] wMat = MatrixUtility.Star(w);
 
-        // rotationMatrix = MatrixUtility.MatrixPlusMatrix(rotationMatrix, MatrixUtility.MatrixDotScalar(MatrixUtility.MatrixDotMatrix(wMat, rotationMatrix), dt));
-        MatrixUtility.MatrixDotMatrix(wMat, rotationMatrix);
+        rotationMatrix = MatrixUtility.MatrixPlusMatrix(
+            rotationMatrix, 
+            MatrixUtility.MatrixDotScalar(
+                MatrixUtility.MatrixDotMatrix(
+                    wMat, 
+                    rotationMatrix
+                ), 
+                dt
+            )
+        );
     }
     
     void CalculateLinearMomentum(Vector3 F){
@@ -87,10 +96,12 @@ public class State
     // p += v * dt
     // v += acc * dt
     // acc = v / dt
+    
     // v(t) = P(t) / M
     public void CalculateVelocity(){
         velocity = linearMomentum / rb.mass;
     }
+
     public void CalculateAcceleration(){
         acceleration = velocity / dt;
     }

@@ -151,7 +151,7 @@ Transform:
   m_GameObject: {fileID: 618479851}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: -1.9}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -183,7 +183,7 @@ MonoBehaviour:
   - {x: 1, y: -1, z: 1}
   - {x: 1, y: 1, z: 1}
   - {x: -1, y: 1, z: 1}
-  weights: 0200000002000000020000000100000001000000010000000100000001000000
+  weights: 0100000001000000010000000100000001000000010000000100000001000000
   mesh: {fileID: 0}
 --- !u!33 &618479857
 MeshFilter:
@@ -248,9 +248,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   mass: 0
-  forceMagnitude: 10
+  forceMagnitude: 1000
   gravity: 9.81
-  friction: 1000000
+  friction: 10
   Dt: 0.02
   acceleration: {x: 0, y: 0, z: 0}
   linearVelocity: {x: 0, y: 0, z: 0}
@@ -438,13 +438,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 963194225}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 1, z: -13.85}
+  m_LocalRotation: {x: 0.23911765, y: 0.3696438, z: -0.09904577, w: 0.89239913}
+  m_LocalPosition: {x: -5, y: 5, z: -5}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 30, y: 45, z: 0}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

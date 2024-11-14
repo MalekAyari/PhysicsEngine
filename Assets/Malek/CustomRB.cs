@@ -49,7 +49,7 @@ public class CustomRB : MonoBehaviour
         // Initialises X(t) = (x(t), R(t), P(t), L(t))
         state = new State(cube.worldCenterOfMass, rotationMatrix, Vector3.zero, Vector3.zero, Dt, this);
 
-        appliedForce = new Vector3(0, 2, 2) * forceMagnitude;
+        appliedForce = new Vector3(0, 2, 0) * forceMagnitude;
         appliedForcePoint = (cube.verts[0].position + cube.verts[1].position) / 2;
     }
 
@@ -65,14 +65,8 @@ public class CustomRB : MonoBehaviour
         
         state.CalculateMatrix(totalForce, torque);
 
-        // Update derived properties based on the new state
-        state.CalculateVelocity();
-        state.CalculateInertiaMatrix();
-        state.CalculateOmega();
-        state.CalculateAcceleration();
-
         // Update center of mass and angular velocity if needed
-        cube.worldCenterOfMass = state.position;
+        cube.worldCenterOfMass += state.position;
         angularVelocity = state.omega;
         linearVelocity = state.velocity;
         acceleration = state.acceleration;
@@ -98,7 +92,7 @@ public class CustomRB : MonoBehaviour
             Vector3 rotationalDisplacement = Vector3.Cross(omega, r);
 
             // Update the vertex position
-            cube.verts[i].position += rotationalDisplacement + state.velocity * Dt;
+            cube.verts[i].position += rotationalDisplacement * Dt + state.velocity * Dt;
         }
 
         // Updating the mesh
@@ -111,7 +105,6 @@ public class CustomRB : MonoBehaviour
         cube.mesh.vertices = updatedVertices;
         cube.mesh.RecalculateBounds();
     }
-
 
     (Vector3, Vector3) CompileForces(Vector3 appliedForce, Vector3 appliedForcePoint)
     {
