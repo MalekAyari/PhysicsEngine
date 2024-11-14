@@ -1,9 +1,8 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public static class MatrixUtility 
 {
+
     public static float[,] Transpose(float[,] matrix)
     {
         int rows = matrix.GetLength(0);
@@ -257,15 +256,6 @@ public static class MatrixUtility
         return new Vector3(matrix[0, 0], matrix[0, 1], matrix[0, 2]);
     }
 
-    public static float[,] Star(Vector3 w){
-        return new float[,]
-            {
-                {0,     -w.z,   w.y },
-                {w.z,   0,      -w.x},
-                {-w.y,  w.x,    0   },
-            };
-    }
-
     // Helper function to format a 2D array for logging
     public static string MatrixToString(float[,] matrix)
     {
@@ -324,4 +314,5 @@ public static class MatrixUtility
 
         return R;
     }
+
 }

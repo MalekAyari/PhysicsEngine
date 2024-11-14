@@ -36,7 +36,7 @@ public class State
     }
 
     void CalculateRotationMatrix(Vector3 w){
-        float[,] wMat = MatrixUtility.Star(w);
+        float[,] wMat = MatrixUtility.VectorToSkewSymmetricMatrix(w);
 
         rotationMatrix = MatrixUtility.MatrixPlusMatrix(
             rotationMatrix, 

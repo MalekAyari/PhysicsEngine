@@ -10,6 +10,7 @@ public class CustomRB : MonoBehaviour
     public float forceMagnitude = 10f;  //Minimum of 10 otherwise won't notice it
     public float gravity = 9.81f;
     public float friction = 0.1f;       // Friction coefficient
+    public float angularFriction = 0.1f;
     public float Dt = 0.2f;
 
     [Header("Velocities")]
@@ -17,9 +18,9 @@ public class CustomRB : MonoBehaviour
     public Vector3 linearVelocity;
     public Vector3 angularVelocity;
 
+
     [Header("Information")]
     public Vector3 inertiaTensor;
-    public Vector3 inertiaTensorRotation;
     public CustomRBCube cube;
     public State state;
     public float tn;
@@ -80,7 +81,7 @@ public class CustomRB : MonoBehaviour
         appliedForcePoint = Vector3.zero;
     }
 
-    // ω(t) × (ri(t) − x(t)) + v(t)
+    // r'i(t) = ω(t) × (ri(t) − x(t)) + v(t)
     void ApplyVertexTransformation(Vector3 omega)
     {
         for (int i = 0; i < cube.verts.Count; i++)
@@ -109,16 +110,15 @@ public class CustomRB : MonoBehaviour
     (Vector3, Vector3) CompileForces(Vector3 appliedForce, Vector3 appliedForcePoint)
     {
         // Gravity force
-        Vector3 grav = Vector3.down * gravity * mass;
+        Vector3 grav = Vector3.down * gravity / mass;
 
-        // Friction force (proportional to velocity)
         Vector3 totalForce = grav + appliedForce; 
 
         Vector3 frictionForce = -friction * totalForce.normalized;
 
         // Torque due to applied force
         Vector3 torque = Vector3.Cross(appliedForcePoint - cube.localCenterOfMass, appliedForce);
-        totalForce = grav + appliedForce + frictionForce;
+        totalForce = grav + appliedForce - frictionForce;
 
         return (torque, totalForce);
     }

@@ -139,19 +139,19 @@ public static class RK4Utility
         float[,] rotationMatrix = state.rotationMatrix;
         Vector3 omega = state.omega;
 
-        float[,] skewOmega1 = MatrixUtility.Star(omega);
+        float[,] skewOmega1 = MatrixUtility.VectorToSkewSymmetricMatrix(omega);
         float[,] k1_r = MatrixUtility.MatrixDotMatrix(skewOmega1, rotationMatrix);
 
         Vector3 omega2 = omega + ComputeAngularAcceleration(state.angularMomentum + (state.angularMomentum * 0.5f), rb) * (timeStep * 0.5f);
-        float[,] skewOmega2 = MatrixUtility.Star(omega2);
+        float[,] skewOmega2 = MatrixUtility.VectorToSkewSymmetricMatrix(omega2);
         float[,] k2_r = MatrixUtility.MatrixDotMatrix(skewOmega2, MatrixUtility.MatrixPlusMatrix(rotationMatrix, MatrixUtility.MatrixDotScalar(k1_r, 0.5f * timeStep)));
 
         Vector3 omega3 = omega + ComputeAngularAcceleration(state.angularMomentum + (state.angularMomentum * 0.5f), rb) * (timeStep * 0.5f);
-        float[,] skewOmega3 = MatrixUtility.Star(omega3);
+        float[,] skewOmega3 = MatrixUtility.VectorToSkewSymmetricMatrix(omega3);
         float[,] k3_r = MatrixUtility.MatrixDotMatrix(skewOmega3, MatrixUtility.MatrixPlusMatrix(rotationMatrix, MatrixUtility.MatrixDotScalar(k2_r, 0.5f * timeStep)));
 
         Vector3 omega4 = omega + ComputeAngularAcceleration(state.angularMomentum + state.angularMomentum, rb) * timeStep;
-        float[,] skewOmega4 = MatrixUtility.Star(omega4);
+        float[,] skewOmega4 = MatrixUtility.VectorToSkewSymmetricMatrix(omega4);
         float[,] k4_r = MatrixUtility.MatrixDotMatrix(skewOmega4, MatrixUtility.MatrixPlusMatrix(rotationMatrix, MatrixUtility.MatrixDotScalar(k3_r, timeStep)));
 
         newRotationMatrix = MatrixUtility.MatrixPlusMatrix(rotationMatrix, MatrixUtility.MatrixDotScalar(MatrixUtility.MatrixPlusMatrix(MatrixUtility.MatrixPlusMatrix(k1_r, MatrixUtility.MatrixDotScalar(k2_r, 2)), MatrixUtility.MatrixPlusMatrix(MatrixUtility.MatrixDotScalar(k3_r, 2), k4_r)), timeStep / 6));
